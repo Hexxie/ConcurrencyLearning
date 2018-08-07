@@ -4,10 +4,12 @@
 using namespace std;
 
 void testFunc() {
-    cout << "Hello World!" << endl;
+    for(int i = 0; i < 100500; i++) {
+        std::cout<<i<<" ";
+    }
 }
 
-int main()
+int main_example()
 {
     thread t1([]{
         for(int i =0; i < 100500; i++) {

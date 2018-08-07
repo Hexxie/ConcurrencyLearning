@@ -7,4 +7,7 @@ LIBS += -Wl,--no-as-needed -lpthread
 
 
 SOURCES += \
-        main.cpp
+    basicConcurrency.cpp \
+    thread_guard.cpp
+
+HEADERS +=
