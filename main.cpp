@@ -10,16 +10,19 @@ void testFunc() {
 int main()
 {
     thread t1([]{
-        cout<<"Hello World!"<<endl;
+        for(int i =0; i < 100500; i++) {
+            cout<<i<<" ";
+        }
     });
 
     int i = 0;
     try {
-        i = 4/0;
-    } catch (exception ) {
-        cout<<"You can't divide"<<endl;
+        throw 20;
+    } catch (int e) {
+        cout<<"Throwed an exception!"<<endl;
+        //This will wait until thread count till the end of the cycle
+        //Otherwize it terminates under the throw
         t1.join();
-
         throw;
     }
 
