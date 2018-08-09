@@ -48,7 +48,7 @@ void f() {
     //wait till the end of the thread
 }
 
-int main() {
+int main_example() {
     f();
     return 0;
 }

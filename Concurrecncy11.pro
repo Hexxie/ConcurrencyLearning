@@ -8,6 +8,7 @@ LIBS += -Wl,--no-as-needed -lpthread
 
 SOURCES += \
     basicConcurrency.cpp \
-    thread_guard.cpp
+    thread_guard.cpp \
+    detachexample.cpp
 
 HEADERS +=
