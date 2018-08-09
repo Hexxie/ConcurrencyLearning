@@ -30,6 +30,7 @@ int main()
     });
 
     //Thread with parameter
+    //Arguments copied into internal storage
     thread t2(funcWithParam, 4, "ThisIsParam");
 
     int i = 0;
