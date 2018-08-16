@@ -20,7 +20,7 @@ void funcWithParam(int i, std::string const& s) {
     cout<<s<<endl;
 }
 
-int main_example()
+int main_example1()
 {
     thread t1([]{
         unique_lock<mutex>lk(m);
