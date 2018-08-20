@@ -5,6 +5,8 @@
 #include <string.h>
 #include "error.h"
 
+//#define DEBUG
+
 typedef struct alarm_tag {
     time_t              time;
     struct alarm_tag    *link;
@@ -70,6 +72,7 @@ void *alarm_thread(void *args) {
          * the message if there's no input.
          */ 
         status = pthread_mutex_unlock(&alarm_mutex);
+
         if(status != 0) {
             sleep(sleep_time);
         } else {
@@ -99,7 +102,7 @@ int main() {
     }
     while(1) {
         printf("alarm>");
-        if(fgets(line, sizeof(line), stdin) == NULL) return 0;
+        if(NULL == fgets(line, sizeof(line), stdin)) return 0;
         if(strlen(line) <= 1) continue;
         alarm = (alarm_t*)malloc(sizeof (alarm_t));
         if(alarm == NULL) {
@@ -120,47 +123,49 @@ int main() {
             status = pthread_mutex_lock(&alarm_mutex);
             if (status != 0) {
                 perror("Lock mutex");
-                alarm->time = time(NULL) + alarm->seconds;
+            }
+
+            alarm->time = time(NULL) + alarm->seconds;
                 
-                /*
-                 * Insert hte new alarm into the list of the alarms
-                 * sorted by expiration time.
-                 */
-                
-                last = &alarm_list;
-                next = *last;
-                while (next != NULL) {
-                    if(next->time >= alarm->time) {
-                        alarm->link = next;
-                        *last = alarm;
-                        break;
-                    }
-                    last = &next->link;
-                    next = next->link;
-                }
-                
-                /*
-                 * If we reached the end of the list, insert the new 
-                 * alarm there. ("next" is NULL and "last" point to the link
-                 * field of the last item or to the list header
-                 */
-                
-                if(next == NULL) {
+            /*
+             * Insert hte new alarm into the list of the alarms
+             * sorted by expiration time.
+             */
+
+            last = &alarm_list;
+            next = *last;
+            while (next != NULL) {
+                if(next->time >= alarm->time) {
+                    alarm->link = next;
                     *last = alarm;
-                    alarm->link = NULL;
+                    break;
                 }
+                last = &next->link;
+                next = next->link;
+            }
+
+            /*
+             * If we reached the end of the list, insert the new
+             * alarm there. ("next" is NULL and "last" point to the link
+             * field of the last item or to the list header
+             */
+
+            if(next == NULL) {
+                *last = alarm;
+                alarm->link = NULL;
+            }
 #ifdef DEBUG
-                printf("list: ");
-                for(next = alarm_list; next != NULL; next = next->link)
-                    printf("%d(%d)[\"%s\"] ", next->time, next->time - time(NULL), next->message);
-                printf("]\n");
+            printf("list: ");
+            for(next = alarm_list; next != NULL; next = next->link)
+                printf("%d(%d)[\"%s\"] ", next->time, next->time - time(NULL), next->message);
+            printf("]\n");
 #endif
-                status = pthread_mutex_unlock(&alarm_mutex);
-                if(status != 0){
-                    perror("Unlock mutex");
-                    return -1;
-                }
+            status = pthread_mutex_unlock(&alarm_mutex);
+            if(status != 0){
+                perror("Unlock mutex");
+                return -1;
             }
         }
     }
 }
+
