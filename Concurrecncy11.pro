@@ -16,7 +16,8 @@ SOURCES += \
     puzzles/basic/mutex.c \
     puzzles/basic/queue.c \
     puzzles/basic/rendezvous.c \
-    puzzles/basic/reusable_barrier.c
+    puzzles/basic/reusable_barrier.c \
+    examples/trylock.c
 
 HEADERS += \
     examples/thread_guard.h
