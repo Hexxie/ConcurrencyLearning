@@ -84,7 +84,7 @@ void *monitor_thread(void *args) {
     }
 }
 
-int main() {
+int main1() {
     int status;
     pthread_t counter_thread_id;
     pthread_t monitor_thread_id;

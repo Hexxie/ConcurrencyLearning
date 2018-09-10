@@ -89,7 +89,7 @@ void *alarm_thread(void *args) {
     }
 }
 
-int main1() {
+int main12() {
     int status;
     char line[128];
     alarm_t *alarm, **last, *next;

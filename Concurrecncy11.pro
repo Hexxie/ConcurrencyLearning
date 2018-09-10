@@ -17,7 +17,9 @@ SOURCES += \
     puzzles/basic/queue.c \
     puzzles/basic/rendezvous.c \
     puzzles/basic/reusable_barrier.c \
-    examples/trylock.c
+    examples/trylock.c \
+    puzzles/basic/barrier.c \
+    puzzles/other/semaphoreUsage.c
 
 HEADERS += \
     examples/thread_guard.h
