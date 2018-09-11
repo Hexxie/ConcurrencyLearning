@@ -15,6 +15,8 @@
  * sem_post at the end
  *
  * Problem:
+ * Writer reads the file and write it fragment by fragment into shared memory
+ * Readers read the shared memory and writes to the new files
  */
 
 #include <unistd.h>
@@ -89,48 +91,26 @@ int read_from_array(int index){
 }
 
 /*
- * Print full array values from 0 to ARRAY_SIZE
+/* Readers read shared memory and writes to each
+ * own file
+ *
+ * arg - the name of the file to write
  */
-void print_full_array() {
-    for (int i = 0; i < ARRAY_SIZE; i++) {
-        printf("%d ", read_from_array(i));
-    }
-    printf("\n");
+static void *thread_reader(void *arg) {
+
 }
 
 /*
-/* write random values to the shared array
- * print full array every ARRAY_SIZE times
+ * Read the input file and fill shared memory
  */
-static void *thread_runner(void *arg) {
-    int rand_i, rand_v, ctr = 0;
-    srand(time(0));
+static void *thread_writer(void *arg) {
 
-    while(terminate_thread) {
-        pthread_mutex_lock(&mutex);
-        printf("Attempt %d: ", ctr);
-        pthread_mutex_unlock(&mutex);
-
-        for(int i = 0; i < ARRAY_SIZE; i++) {
-
-            rand_i = rand() % ARRAY_SIZE;
-            rand_v = rand() % 50;
-
-            write_to_array(rand_i, rand_v);
-        }
-
-        print_full_array();
-        pthread_mutex_lock(&mutex);
-        printf("\n");
-        ctr++;
-        pthread_mutex_unlock(&mutex);
-    }
 }
 
 
 int main() {
 
-    pthread_t reader_threads[NR_OF_THREADS], writer_thread;
+    pthread_t reader_threads[NR_OF_THREADS], writer_threads[NR_OF_THREADS];
     int result;
 
     sem_init(&semaphore, 0, 0);
@@ -142,9 +122,18 @@ int main() {
     //check that filling is valid
     print_full_array();
 
-    //create 10 threads
+    //create readers
     for(int i = 0; i < NR_OF_THREADS; i++) {
-        result = pthread_create(&reader_threads[i], NULL, thread_runner, NULL);
+        result = pthread_create(&reader_threads[i], NULL, thread_reader, "");
+        if(result != 0) {
+            perror("Thread has been failed");
+            return -1;
+        }
+    }
+
+    //create writers
+    for(int i = 0; i < NR_OF_THREADS; i++) {
+        result = pthread_create(&writer_threads[i], NULL, thread_writer, NULL);
         if(result != 0) {
             perror("Thread has been failed");
             return -1;
