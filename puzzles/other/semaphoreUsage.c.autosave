@@ -35,9 +35,7 @@
 #define NR_LOOPS 100
 
 static sem_t semaphore;
-static int terminate_thread = 1;
 static int shared_array[ARRAY_SIZE];
-pthread_mutex_t mutex;
 
 /*
  * Write value to the array by index
@@ -94,7 +92,6 @@ int read_from_array(int index){
 /* Readers read shared memory and writes to each
  * own file
  *
- * arg - the name of the file to write
  */
 static void *thread_reader(void *arg) {
 
@@ -124,7 +121,7 @@ int main() {
 
     //create readers
     for(int i = 0; i < NR_OF_THREADS; i++) {
-        result = pthread_create(&reader_threads[i], NULL, thread_reader, "");
+        result = pthread_create(&reader_threads[i], NULL, thread_reader, NULL);
         if(result != 0) {
             perror("Thread has been failed");
             return -1;
@@ -147,7 +144,7 @@ int main() {
     for(int i = 0; i < NR_OF_THREADS; i++) {
         result = pthread_join(writer_threads[i], NULL);
         if(result != 0){
-            perror("reader join");
+            perror("writer join");
             return -1;
         }
     }
