@@ -9,3 +9,56 @@
  *
  * we want to guarantee that a1 happens before b2 and b1 happens before a2
  */
+
+#include <pthread.h>
+#include <stdio.h>
+#include <semaphore.h>
+
+static sem_t semaphore;
+
+static void* doA(void *arg) {
+    printf("This is a thread A\n");
+    printf("We're going to signal to thread B\n");
+    sleep(10);
+    sem_post(&semaphore);
+}
+
+static void* doB(void *arg) {
+    int sem_value;
+
+    printf("This is threadB!\n");
+
+    sem_wait(&semaphore);
+    printf("ThreadB got it!\n");
+
+    sem_getvalue(&semaphore, &sem_value);
+    printf("Semaphore value is %d\n\n", sem_value);
+
+}
+
+
+int main() {
+
+    pthread_t threadA, threadB;
+
+    int result;
+
+    printf("Initialize the semaphore\n\n");
+    sem_init(&semaphore, 0, 0);
+
+    printf("start to create threads\n\n");
+
+    result = pthread_create(&threadB, NULL, doB, NULL);
+    result = pthread_create(&threadA, NULL, doA, NULL);
+
+    printf("\ndo main\n");
+
+    result = pthread_join(threadB, NULL);
+    result = pthread_join(threadA, NULL);
+
+    printf("destroy the semaphore\n\n");
+    sem_destroy(&semaphore);
+    printf("the app finished\n\n");
+
+    return 0;
+}
