@@ -9,28 +9,28 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-sem_t semaphore_for_counter;
+pthread_mutex_t counter_mutex = PTHREAD_MUTEX_INITIALIZER;
 static int counter = 0;
 
 static void* doA(void *arg) {
     printf("This is thread A\n");
 
-    for(int i = 0; i < 10; i++) {
-        sem_wait(&semaphore_for_counter);
+    for(int i = 0; i < 1000; i++) {
+        pthread_mutex_lock(&counter_mutex);
         counter++;
         printf("A: +1 - counter %d\nPass B\n", counter);
-        sem_post(&semaphore_for_counter);
+        pthread_mutex_unlock(&counter_mutex);
     }
 }
 
 static void doB(void *arg) {
    printf("This is thread B\n");
 
-   for(int i = 0; i < 10; i++) {
-       sem_wait(&semaphore_for_counter);
+   for(int i = 0; i < 1000; i++) {
+       pthread_mutex_lock(&counter_mutex);
        counter++;
        printf("B: +1 - counter %d\nPass A\n", counter);
-       sem_post(&semaphore_for_counter);
+       pthread_mutex_unlock(&counter_mutex);
    }
 
 }
@@ -38,12 +38,6 @@ static void doB(void *arg) {
 
 int main() {
     pthread_t threadA, threadB;
-
-    /*
-     * Value 1 means that a thread may proceed and access the
-     * shared variable
-     */
-    sem_init(&semaphore_for_counter, 0, 1);
     int result;
 
     printf("start to create threads\n\n");
