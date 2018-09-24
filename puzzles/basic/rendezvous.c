@@ -15,12 +15,16 @@
 #include <semaphore.h>
 
 static sem_t threadA1_finishes;
+static sem_t threadB1_finishes;
 
 static void* doA(void *arg) {
     printf("This is a thread A\n");
     printf("We're going to signal to thread B\n");
     sleep(10);
     sem_post(&threadA1_finishes);
+    printf("wait for threadB again\n");
+    sem_wait(&threadB1_finishes);
+    printf("Got signal from B1\n");
 }
 
 static void* doB(void *arg) {
@@ -32,7 +36,9 @@ static void* doB(void *arg) {
     printf("ThreadB got it!\n");
 
     sem_getvalue(&threadA1_finishes, &sem_value);
-    printf("Semaphore value is %d\n\n", sem_value);
+    printf("Lets signal to threadA again!\n");
+    sleep(5);
+    sem_post(&threadB1_finishes);
 
 }
 
@@ -45,6 +51,7 @@ int main() {
 
     printf("Initialize the semaphore\n\n");
     sem_init(&threadA1_finishes, 0, 0);
+    sem_init(&threadB1_finishes, 0, 0);
 
     printf("start to create threads\n\n");
 
@@ -57,6 +64,7 @@ int main() {
     result = pthread_join(threadA, NULL);
 
     printf("destroy the semaphore\n\n");
+    sem_destroy(&threadB1_finishes);
     sem_destroy(&threadA1_finishes);
     printf("the app finished\n\n");
 
