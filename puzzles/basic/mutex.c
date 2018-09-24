@@ -38,6 +38,11 @@ static void doB(void *arg) {
 
 int main() {
     pthread_t threadA, threadB;
+
+    /*
+     * Value 1 means that a thread may proceed and access the
+     * shared variable
+     */
     sem_init(&semaphore_for_counter, 0, 1);
     int result;
 
