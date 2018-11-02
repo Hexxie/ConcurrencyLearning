@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include "queue.h"
 
 
@@ -69,7 +71,15 @@ int queue_add(queue_t *q, void* item) {
     return 0;
 }
 
-static void queue_check() {
+static void print_queue_check(queue_t q, int nrItems) {
+    for(int i = 0; i < nrItems; i++) {
+        printf("item added: %d\n", (int)q.items[i]);
+    }
+    printf("\n");
+}
+
+
+static void main_queue_check() {
     //Check that queue works ok
     int result;
     queue_t queue;

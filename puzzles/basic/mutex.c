@@ -36,7 +36,7 @@ static void doB(void *arg) {
 }
 
 
-int main() {
+int main_mutex() {
     pthread_t threadA, threadB;
     int result;
 

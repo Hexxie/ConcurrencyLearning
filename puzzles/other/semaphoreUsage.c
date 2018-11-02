@@ -108,7 +108,7 @@ static void *thread_writer(void *arg) {
 }
 
 
-int main() {
+int main_usage() {
 
     pthread_t reader_threads[NR_OF_THREADS], writer_threads[NR_OF_THREADS];
     int result;
@@ -120,7 +120,7 @@ int main() {
     memset(shared_array, 0, ARRAY_SIZE);
 
     //check that filling is valid
-    print_full_array();
+    //print_full_array();
 
     //create readers
     for(int i = 0; i < NR_OF_THREADS; i++) {

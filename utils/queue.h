@@ -6,7 +6,6 @@
 #define MAX_NR_OF_ITEMS (150)
 
 struct {
-    pthread_mutex_t lock;
     void* items[MAX_NR_OF_ITEMS];
     int length;
 } typedef queue_t;

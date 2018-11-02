@@ -50,7 +50,7 @@ static void doB(void *arg) {
 }
 
 
-int main() {
+int main_rendezvous() {
 
     pthread_t threadA, threadB;
 

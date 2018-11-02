@@ -37,54 +37,94 @@
 #include <semaphore.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "utils/queue.h"
 
-#define MAX_NR_OF_ITEMS (150)
+#define MAX_NR_MESSAGES 10
 
-//---------------- queue ---------------------------
+struct {
+    queue_t queue;
+    pthread_mutex_t lock;
+    pthread_cond_t event;
+} typedef shared_t;
 
+static shared_t buffer;
 
 //------------------thread exec functions-------------
 void* produceEvent(void *arg) {
+    time_t t;
+    int cycles = 5;
+    int value = 0;
+    int counter = 0;
+    char* message;
 
+    message = (char*)malloc(sizeof(char) * 100);
 
+    while(counter < MAX_NR_MESSAGES) {
+        if(message) {
+            srand((unsigned) time(&t));
+
+            for(int i = 0; i < cycles; i++) {
+                value = rand() % 50;
+            }
+
+            sprintf(message, "generated nr %d\n", value);
+
+            pthread_mutex_lock(&buffer.lock);
+            queue_add(&buffer.queue, (void*)message);
+            pthread_mutex_unlock(&buffer.lock);
+
+            pthread_cond_signal(&buffer.event);
+        }
+
+    counter++;
+    }
+
+    free(message);
 
     return NULL;
 }
 
 void* consumeEvent(void* arg) {
+    void *item;
+
+    //Q: can I use the same mutex for different (totally) threads?
+    pthread_mutex_lock(&buffer.lock);
+    pthread_cond_wait(&buffer.event, &buffer.lock);
+    pthread_mutex_unlock(&buffer.lock);
+
+    pthread_mutex_lock(&buffer.lock);
+    item = queue_get(buffer.queue);
+    queue_remove(&buffer.queue);
+    pthread_mutex_unlock(&buffer.lock);
+
+    printf("extracted item: %s\n", (char*)item);
+
     return NULL;
 }
 
 //------------------- main --------------------------
 
-void print_queue_check(queue_t q, int nrItems) {
-    for(int i = 0; i < nrItems; i++) {
-        printf("item added: %d\n", (int)q.items[i]);
-    }
-    printf("\n");
-}
-
 int main(void) {
 
-    queue_t queue;
     pthread_t consumer, producer;
 
     //init block
-    pthread_mutex_init(&queue.lock, NULL);
-    memset(queue.items, (int)NULL, MAX_NR_OF_ITEMS);
-    queue.length = 0;
+    pthread_mutex_init(&buffer.lock, NULL);
+    pthread_cond_init(&buffer.event, NULL);
+    memset(&buffer.queue.items, (int)NULL, MAX_NR_OF_ITEMS);
+    buffer.queue.length = 0;
 
     pthread_create(&producer, NULL, produceEvent, NULL);
     pthread_create(&consumer, NULL, consumeEvent, NULL);
 
 
+
     //destroy block
     pthread_join(consumer, NULL);
     pthread_join(producer, NULL);
-    pthread_mutex_destroy(&queue.lock);
-
-
+    pthread_cond_destroy(&buffer.event);
+    pthread_mutex_destroy(&buffer.lock);
     return 0;
 }
