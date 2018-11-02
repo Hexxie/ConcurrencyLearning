@@ -19,7 +19,9 @@ SOURCES += \
     puzzles/basic/reusable_barrier.c \
     examples/trylock.c \
     puzzles/basic/barrier.c \
-    puzzles/other/semaphoreUsage.c
+    puzzles/other/semaphoreUsage.c \
+    puzzles/basic/barrier.c \
+    puzzles/classical/producer-consumer.c
 
 HEADERS += \
     examples/thread_guard.h
