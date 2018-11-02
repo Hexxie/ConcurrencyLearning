@@ -21,7 +21,9 @@ SOURCES += \
     puzzles/basic/barrier.c \
     puzzles/other/semaphoreUsage.c \
     puzzles/basic/barrier.c \
-    puzzles/classical/producer-consumer.c
+    puzzles/classical/producer-consumer.c \
+    utils/queue.c
 
 HEADERS += \
-    examples/thread_guard.h
+    examples/thread_guard.h \
+    utils/queue.h
