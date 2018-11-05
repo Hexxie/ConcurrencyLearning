@@ -1,4 +1,4 @@
-/*
+/**
  * Producers create items of some kind and add the to a data structure
  * Consumers remove the items and process them
  *
