@@ -22,14 +22,11 @@
  *
  * 1-st implementation
  *  - 1 producer. 1 consumer. Producer generates masseges, consumer writes
- *    it to the terminal
- *  - n producers generates logs, consumer writes it to the terminal
- *  - n producers generates logs, n consumer writes it to the different
- *   terminals (1 terminal - 1 consumer). Q: How to share it between different
- *   copies of the program?
+ *    it to the terminal -----------> done
+ *  - n producers generates logs, consumer writes it to the terminal ------> done
+ *  - n producers generates logs, n consumers
  *
- * //TBD: Check that queue is correct (extract it to the separate file)
- * //     Create consumer and producer threads
+ * !! Improvement - change shared variable for terminating the thread with trylock
  *
  */
 
@@ -42,6 +39,8 @@
 #include "utils/queue.h"
 
 #define MAX_NR_MESSAGES 10
+#define NR_PRODUCERS 3
+#define NR_CONSUMERS 2
 
 struct {
     queue_t queue;
@@ -73,10 +72,10 @@ void* produceEvent(void *arg) {
         if(message) {
 
             for(int i = 0; i < cycles; i++) {
-                value = rand() % 50;
+                value = rand() % 100;
             }
 
-            sprintf(message, "generated nr %d\n", value);
+            sprintf(message, "Producer %ul generated nr %d\n", pthread_self(), value);
 
             pthread_mutex_lock(&buffer.lock);
             queue_add(&buffer.queue, (void*)message);
@@ -105,7 +104,8 @@ void* consumeEvent(void* arg) {
     queue_remove(&buffer.queue);
     pthread_mutex_unlock(&buffer.lock);
 
-    printf("extracted item: %s\n", (char*)item);
+    printf("Thread %ul: extracted item: %s\n", pthread_self(), (char*)item);
+    free(item);
    }//while
 
     return NULL;
@@ -115,7 +115,7 @@ void* consumeEvent(void* arg) {
 
 int main(void) {
 
-    pthread_t consumer, producer;
+    pthread_t consumer[NR_CONSUMERS], producer[NR_PRODUCERS];
 
     //init block
     pthread_mutex_init(&buffer.lock, NULL);
@@ -123,12 +123,22 @@ int main(void) {
     memset(&buffer.queue.items, (int)NULL, MAX_NR_OF_ITEMS);
     buffer.queue.length = 0;
 
-    pthread_create(&producer, NULL, produceEvent, NULL);
-    pthread_create(&consumer, NULL, consumeEvent, NULL);
+    for(int i = 0; i < NR_PRODUCERS; i++) {
+        pthread_create(&producer[i], NULL, produceEvent, NULL);
+    }
+    for(int i = 0 ; i < NR_CONSUMERS; i++) {
+       pthread_create(&consumer[i], NULL, consumeEvent, NULL);
+    }
+
+
 
     //destroy block
-    pthread_join(consumer, NULL);
-    pthread_join(producer, NULL);
+    for(int i = 0; i < NR_CONSUMERS; i++) {
+        pthread_join(consumer[i], NULL);
+    }
+    for(int i = 0; i < NR_PRODUCERS; i++) {
+        pthread_join(producer[i], NULL);
+    }
     pthread_cond_destroy(&buffer.event);
     pthread_mutex_destroy(&buffer.lock);
     return 0;
