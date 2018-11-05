@@ -49,11 +49,10 @@ struct {
     pthread_cond_t event;
 } typedef shared_t;
 
-static pthread_cond_t consumerWaiter = PTHREAD_COND_INITIALIZER;
-
 static shared_t buffer;
 
 static int doConcumerCycle = 1;
+
 static pthread_mutex_t consumerMutex = PTHREAD_MUTEX_INITIALIZER;
 
 //------------------thread exec functions-------------
@@ -81,10 +80,6 @@ void* produceEvent(void *arg) {
 
             pthread_mutex_lock(&buffer.lock);
             queue_add(&buffer.queue, (void*)message);
-            print_queue_check(buffer.queue, buffer.queue.length);
-
-            pthread_cond_signal(&buffer.event);
-            printf("debug signal\n");
             pthread_mutex_unlock(&buffer.lock);            
         }
 
@@ -102,15 +97,9 @@ void* produceEvent(void *arg) {
 void* consumeEvent(void* arg) {
     void *item;
 
-    //Q: can I use the same mutex for different (totally) threads?
-
    while(doConcumerCycle == 1 || buffer.queue.length != 0) {
 
-    printf("debug wait for signal\n");
     pthread_mutex_lock(&buffer.lock);
-    printf("debug locked waiting\n");
-    pthread_cond_wait(&buffer.event, &buffer.lock);
-
     printf("debug get here\n");
     item = queue_get(buffer.queue);
     queue_remove(&buffer.queue);
