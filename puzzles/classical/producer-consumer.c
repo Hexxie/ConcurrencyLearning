@@ -24,9 +24,8 @@
  *  - 1 producer. 1 consumer. Producer generates masseges, consumer writes
  *    it to the terminal -----------> done
  *  - n producers generates logs, consumer writes it to the terminal ------> done
- *  - n producers generates logs, n consumers
+ *  - n producers generates logs, n consumers --------------> done
  *
- * !! Improvement - change shared variable for terminating the thread with trylock
  *
  */
 
@@ -52,7 +51,7 @@ static shared_t buffer;
 
 static int doConcumerCycle = 1;
 
-static pthread_mutex_t consumerMutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t finishConsumer = PTHREAD_MUTEX_INITIALIZER;
 
 //------------------thread exec functions-------------
 void* produceEvent(void *arg) {
@@ -64,7 +63,9 @@ void* produceEvent(void *arg) {
 
     srand((unsigned) time(&t));
 
-    while(counter < MAX_NR_MESSAGES) {
+    while(counter < MAX_NR_OF_ITEMS + 10) {
+
+
 
         //Q: When should I remove the message? -->> memory leak (and how)
         message = (char*)malloc(sizeof(char) * 100);
@@ -72,13 +73,22 @@ void* produceEvent(void *arg) {
         if(message) {
 
             for(int i = 0; i < cycles; i++) {
-                value = rand() % 100;
+                value = rand() % 50;
             }
 
             sprintf(message, "Producer %ul generated nr %d\n", pthread_self(), value);
 
             pthread_mutex_lock(&buffer.lock);
+
+            //if queue is full - wait till consumer remove some
+            if(buffer.queue.length >= MAX_NR_OF_ITEMS) {
+                pthread_cond_wait(&buffer.event, &buffer.lock);
+            }
+
             queue_add(&buffer.queue, (void*)message);
+
+            //signal that consumer can start to consume
+            pthread_cond_signal(&buffer.event);
             pthread_mutex_unlock(&buffer.lock);            
         }
 
@@ -86,9 +96,9 @@ void* produceEvent(void *arg) {
     }//while
 
     //signal consumer to finish
-    pthread_mutex_lock(&consumerMutex);
+    pthread_mutex_lock(&finishConsumer);
     doConcumerCycle = 0;
-    pthread_mutex_unlock(&consumerMutex);
+    pthread_mutex_unlock(&finishConsumer);
 
     return NULL;
 }
@@ -99,9 +109,17 @@ void* consumeEvent(void* arg) {
    while(doConcumerCycle == 1 || buffer.queue.length != 0) {
 
     pthread_mutex_lock(&buffer.lock);
-    printf("debug get here\n");
+
+    //if queue is empty wait till producer produce something
+    if(buffer.queue.length == 0) {
+        pthread_cond_wait(&buffer.event, &buffer.lock);
+    }
+
     item = queue_get(buffer.queue);
     queue_remove(&buffer.queue);
+
+    //signal that producer can produce
+    pthread_cond_signal(&buffer.event);
     pthread_mutex_unlock(&buffer.lock);
 
     printf("Thread %ul: extracted item: %s\n", pthread_self(), (char*)item);
