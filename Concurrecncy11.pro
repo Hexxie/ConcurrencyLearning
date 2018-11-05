@@ -14,7 +14,6 @@ SOURCES += \
     puzzles/basic/barrier.c \
     puzzles/basic/multiplex.c \
     puzzles/basic/mutex.c \
-    puzzles/basic/queue.c \
     puzzles/basic/rendezvous.c \
     puzzles/basic/reusable_barrier.c \
     examples/trylock.c \

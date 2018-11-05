@@ -49,7 +49,12 @@ struct {
     pthread_cond_t event;
 } typedef shared_t;
 
+static pthread_cond_t consumerWaiter = PTHREAD_COND_INITIALIZER;
+
 static shared_t buffer;
+
+static int doConcumerCycle = 1;
+static pthread_mutex_t consumerMutex = PTHREAD_MUTEX_INITIALIZER;
 
 //------------------thread exec functions-------------
 void* produceEvent(void *arg) {
@@ -59,11 +64,14 @@ void* produceEvent(void *arg) {
     int counter = 0;
     char* message;
 
-    message = (char*)malloc(sizeof(char) * 100);
+    srand((unsigned) time(&t));
 
     while(counter < MAX_NR_MESSAGES) {
+
+        //Q: When should I remove the message? -->> memory leak (and how)
+        message = (char*)malloc(sizeof(char) * 100);
+
         if(message) {
-            srand((unsigned) time(&t));
 
             for(int i = 0; i < cycles; i++) {
                 value = rand() % 50;
@@ -73,15 +81,20 @@ void* produceEvent(void *arg) {
 
             pthread_mutex_lock(&buffer.lock);
             queue_add(&buffer.queue, (void*)message);
-            pthread_mutex_unlock(&buffer.lock);
+            print_queue_check(buffer.queue, buffer.queue.length);
 
             pthread_cond_signal(&buffer.event);
+            printf("debug signal\n");
+            pthread_mutex_unlock(&buffer.lock);            
         }
 
     counter++;
-    }
+    }//while
 
-    free(message);
+    //signal consumer to finish
+    pthread_mutex_lock(&consumerMutex);
+    doConcumerCycle = 0;
+    pthread_mutex_unlock(&consumerMutex);
 
     return NULL;
 }
@@ -90,16 +103,21 @@ void* consumeEvent(void* arg) {
     void *item;
 
     //Q: can I use the same mutex for different (totally) threads?
-    pthread_mutex_lock(&buffer.lock);
-    pthread_cond_wait(&buffer.event, &buffer.lock);
-    pthread_mutex_unlock(&buffer.lock);
 
+   while(doConcumerCycle == 1 || buffer.queue.length != 0) {
+
+    printf("debug wait for signal\n");
     pthread_mutex_lock(&buffer.lock);
+    printf("debug locked waiting\n");
+    pthread_cond_wait(&buffer.event, &buffer.lock);
+
+    printf("debug get here\n");
     item = queue_get(buffer.queue);
     queue_remove(&buffer.queue);
     pthread_mutex_unlock(&buffer.lock);
 
     printf("extracted item: %s\n", (char*)item);
+   }//while
 
     return NULL;
 }
@@ -118,8 +136,6 @@ int main(void) {
 
     pthread_create(&producer, NULL, produceEvent, NULL);
     pthread_create(&consumer, NULL, consumeEvent, NULL);
-
-
 
     //destroy block
     pthread_join(consumer, NULL);

@@ -71,7 +71,7 @@ int queue_add(queue_t *q, void* item) {
     return 0;
 }
 
-static void print_queue_check(queue_t q, int nrItems) {
+void print_queue_check(queue_t q, int nrItems) {
     for(int i = 0; i < nrItems; i++) {
         printf("item added: %d\n", (int)q.items[i]);
     }
