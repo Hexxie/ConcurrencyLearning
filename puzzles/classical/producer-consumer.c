@@ -26,7 +26,10 @@
  *  - n producers generates logs, consumer writes it to the terminal ------> done
  *  - n producers generates logs, n consumers --------------> done
  *
- *
+ * Improve:
+ *  + Add check result of the methods which has a return info
+ *  + Create a separate API for message (with alloc and dealloc)
+ *  + Change 0 and -1 return values to more meaningful
  */
 
 #include <pthread.h>
