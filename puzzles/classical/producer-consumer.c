@@ -50,8 +50,6 @@ struct {
     pthread_cond_t event;
 } typedef shared_t;
 
-static shared_t buffer;
-
 static int doConcumerCycle = 1;
 
 static pthread_mutex_t finishConsumer = PTHREAD_MUTEX_INITIALIZER;
@@ -59,6 +57,8 @@ static pthread_mutex_t finishConsumer = PTHREAD_MUTEX_INITIALIZER;
 //------------------thread exec functions-------------
 void* produceEvent(void *arg) {
     time_t t;
+    shared_t* buffer = (shared_t*)arg;
+
     int cycles = 5;
     int value = 0;
     int counter = 0;
@@ -81,18 +81,18 @@ void* produceEvent(void *arg) {
 
             sprintf(message, "Producer %ul generated nr %d\n", pthread_self(), value);
 
-            pthread_mutex_lock(&buffer.lock);
+            pthread_mutex_lock(&buffer->lock);
 
             //if queue is full - wait till consumer remove some
-            if(buffer.queue.length >= MAX_NR_OF_ITEMS) {
-                pthread_cond_wait(&buffer.event, &buffer.lock);
+            if(buffer->queue.length >= MAX_NR_OF_ITEMS) {
+                pthread_cond_wait(&buffer->event, &buffer->lock);
             }
 
-            queue_add(&buffer.queue, (void*)message);
+            queue_add(&buffer->queue, (void*)message);
 
             //signal that consumer can start to consume
-            pthread_cond_signal(&buffer.event);
-            pthread_mutex_unlock(&buffer.lock);            
+            pthread_cond_signal(&buffer->event);
+            pthread_mutex_unlock(&buffer->lock);
         }
 
     counter++;
@@ -108,22 +108,23 @@ void* produceEvent(void *arg) {
 
 void* consumeEvent(void* arg) {
     void *item;
+    shared_t* buffer = (shared_t*)arg;
 
-   while(doConcumerCycle == 1 || buffer.queue.length != 0) {
+   while(doConcumerCycle == 1 || buffer->queue.length != 0) {
 
-    pthread_mutex_lock(&buffer.lock);
+    pthread_mutex_lock(&buffer->lock);
 
     //if queue is empty wait till producer produce something
-    if(buffer.queue.length == 0) {
-        pthread_cond_wait(&buffer.event, &buffer.lock);
+    if(buffer->queue.length == 0) {
+        pthread_cond_wait(&buffer->event, &buffer->lock);
     }
 
-    item = queue_get(buffer.queue);
-    queue_remove(&buffer.queue);
+    item = queue_get(buffer->queue);
+    queue_remove(&buffer->queue);
 
     //signal that producer can produce
-    pthread_cond_signal(&buffer.event);
-    pthread_mutex_unlock(&buffer.lock);
+    pthread_cond_signal(&buffer->event);
+    pthread_mutex_unlock(&buffer->lock);
 
     printf("Thread %ul: extracted item: %s\n", pthread_self(), (char*)item);
     free(item);
@@ -137,18 +138,21 @@ void* consumeEvent(void* arg) {
 int main(void) {
 
     pthread_t consumer[NR_CONSUMERS], producer[NR_PRODUCERS];
+    shared_t *buffer;
+
+    buffer = (shared_t*)malloc(sizeof(shared_t));
 
     //init block
-    pthread_mutex_init(&buffer.lock, NULL);
-    pthread_cond_init(&buffer.event, NULL);
-    memset(&buffer.queue.items, (int)NULL, MAX_NR_OF_ITEMS);
-    buffer.queue.length = 0;
+    pthread_mutex_init(&buffer->lock, NULL);
+    pthread_cond_init(&buffer->event, NULL);
+    memset(&buffer->queue.items, (int)NULL, MAX_NR_OF_ITEMS);
+    buffer->queue.length = 0;
 
     for(int i = 0; i < NR_PRODUCERS; i++) {
-        pthread_create(&producer[i], NULL, produceEvent, NULL);
+        pthread_create(&producer[i], NULL, produceEvent, buffer);
     }
     for(int i = 0 ; i < NR_CONSUMERS; i++) {
-       pthread_create(&consumer[i], NULL, consumeEvent, NULL);
+       pthread_create(&consumer[i], NULL, consumeEvent, buffer);
     }
 
 
@@ -160,7 +164,7 @@ int main(void) {
     for(int i = 0; i < NR_PRODUCERS; i++) {
         pthread_join(producer[i], NULL);
     }
-    pthread_cond_destroy(&buffer.event);
-    pthread_mutex_destroy(&buffer.lock);
+    pthread_cond_destroy(&buffer->event);
+    pthread_mutex_destroy(&buffer->lock);
     return 0;
 }
